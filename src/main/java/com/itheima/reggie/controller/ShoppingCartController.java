@@ -54,6 +54,34 @@ public class ShoppingCartController {
         return R.success(cartServiceOne);
     }
 
+    //减少购物车
+    @PostMapping("/sub")
+    public R<ShoppingCart> sub(@RequestBody ShoppingCart shoppingCart){
+        Long currentId = BaseContext.getCurrentId();
+        shoppingCart.setUserId(currentId);
+        Long dishId = shoppingCart.getDishId();
+        LambdaQueryWrapper<ShoppingCart> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(ShoppingCart::getUserId,currentId);
+        if (dishId != null) {
+            //菜品
+            queryWrapper.eq(ShoppingCart::getDishId,dishId);
+        }else {
+            //套餐
+            queryWrapper.eq(ShoppingCart::getSetmealId,shoppingCart.getSetmealId());
+        }
+        ShoppingCart cartServiceOne = shoppingCartService.getOne(queryWrapper);
+        if (cartServiceOne != null) {
+            Integer number = cartServiceOne.getNumber();
+            if (number > 1){
+                cartServiceOne.setNumber(number - 1);
+                shoppingCartService.updateById(cartServiceOne);
+            }else {
+                shoppingCartService.removeById(cartServiceOne);
+            }
+        }
+        return R.success(cartServiceOne);
+    }
+
     //查看购物车
     @GetMapping("/list")
     public R<List<ShoppingCart>> list(){
@@ -63,6 +91,8 @@ public class ShoppingCartController {
         List<ShoppingCart> list = shoppingCartService.list(queryWrapper);
         return R.success(list);
     }
+
+
 
     //清空购物车
     @DeleteMapping("/clean")
